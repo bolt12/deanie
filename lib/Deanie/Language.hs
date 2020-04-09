@@ -23,6 +23,7 @@ module Deanie.Language (
 
   ) where
 
+import Control.Selective.Free
 import Control.Applicative.Extended (replicateA)
 import Control.Applicative.Free hiding (Pure)
 import Control.Monad.Free
@@ -38,7 +39,7 @@ data ProbF r =
 
 type Prob = Free ProbF
 
-newtype ProgramF a = ProgramF (Sum ProbF (Ap (Free ProgramF)) a)
+newtype ProgramF a = ProgramF (Sum ProbF (Sum (Select (Free ProgramF)) (Ap (Free ProgramF))) a)
   deriving Functor
 
 type Program = Free ProgramF

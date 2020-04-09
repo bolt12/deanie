@@ -5,21 +5,25 @@ module Deanie.Inference.Rejection (
   , grejection
   ) where
 
+import Deanie.Language
+import qualified Deanie.Expr as D
 import Control.Monad
 import qualified Data.Foldable as F
+import Control.Selective
+import Control.Selective.Free
+import Control.Applicative.Extended
 
 grejection
-  :: (Foldable f, Monad m)
-  => ([a] -> [b] -> Bool) -> f b -> m c -> (c -> m a) -> m c
+  :: (Foldable f)
+  => ([a] -> [b] -> Bool) -> f b -> Program c -> (c -> Program a) -> Program c
 grejection predicate observed proposal model = loop where
   len  = length observed
   loop = do
     parameters <- proposal
-    generated  <- replicateM len (model parameters)
+    generated  <- D.product $ replicateA len (liftAp $ model parameters)
     if   predicate generated (F.toList observed)
     then return parameters
     else loop
 
-rejection :: (Foldable f, Monad m, Eq a) => f a -> m b -> (b -> m a) -> m b
+rejection :: (Foldable f, Eq a) => f a -> Program b -> (b -> Program a) -> Program b
 rejection = grejection (==)
-

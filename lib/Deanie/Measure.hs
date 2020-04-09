@@ -16,6 +16,8 @@ import Control.Monad
 import Data.List (foldl')
 import Deanie.Language
 import Control.Foldl (Fold)
+import Control.Selective
+import Control.Selective.Free
 import Numeric.Integration.TanhSinh
 import Numeric.SpecFunctions
 
@@ -54,6 +56,10 @@ instance Applicative Measure where
   pure x = Measure (\f -> f x)
   Measure h <*> Measure g = Measure $ \f ->
     h (\k -> g (f . k))
+
+instance Selective Measure where
+  select (Measure ab) (Measure fab) = Measure $ \f ->
+    ab (either (\a -> fab (\g -> f (g a))) f)
 
 instance Monad Measure where
   return x  = Measure (\f -> f x)
@@ -100,7 +106,8 @@ mgaussian m s = fromDensityFunction (density m s) where
 measure :: Program a -> Measure a
 measure = iterM $ \case
     ProgramF (InL term) -> evalAlg term
-    ProgramF (InR term) -> join (runAp measure term)
+    ProgramF (InR (InL term)) -> join (runSelect measure term)
+    ProgramF (InR (InR term)) -> join (runAp measure term)
   where
     evalAlg = \case
       BernoulliF p k  -> mbernoulli p >>= k

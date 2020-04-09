@@ -18,6 +18,8 @@ module Deanie.Expr (
   , geometric
   ) where
 
+import Control.Selective
+import Control.Selective.Free
 import Control.Applicative.Extended
 import qualified Control.Foldl as L
 import Control.Monad
@@ -26,7 +28,7 @@ import Deanie.Language
 import Prelude hiding (product)
 
 product :: Ap (Free ProgramF) a -> Program a
-product term = liftF (ProgramF (InR term))
+product term = liftF (ProgramF (InR . InR $ term))
 
 iid :: Int -> Program a -> Program [a]
 iid n term = product (replicateA n (liftAp term))
@@ -57,9 +59,8 @@ invgamma :: Double -> Double -> Program Double
 invgamma a b = fmap recip (gamma a b)
 
 geometric :: Double -> Program Int
-geometric p = fix $ \count -> do
-  accept <- bernoulli p
-  if   accept
-  then return 1
-  else fmap succ count
+geometric p = liftF . ProgramF . InR . InL $ fix $ \count ->
+  ifS (liftSelect $ bernoulli p)
+      (pure 1)
+      (fmap succ count)
 

@@ -16,6 +16,7 @@ library
   default-extensions:
       LambdaCase
     , RecordWildCards
+    , FlexibleContexts
   other-modules:
       Control.Applicative.Extended
   exposed-modules:
@@ -38,6 +39,7 @@ library
     , monad-loops
     , random-fu
     , recursion-schemes
+    , selective
 
 Test-suite betabernoulli-rejection
   type:              exitcode-stdio-1.0

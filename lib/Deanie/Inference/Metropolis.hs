@@ -6,6 +6,8 @@ module Deanie.Inference.Metropolis (
 import Deanie.Language
 import qualified Control.Foldl as L
 import Control.Monad.Loops
+import Control.Selective
+import Control.Selective.Free
 
 data MHP a = MHP {
     n       :: {-# UNPACK #-} !Int
@@ -29,11 +31,11 @@ metropolis epochs obs prior model = do
           proposal <- prior
           let pcost = cost proposal
               prob  = moveProbability ccost pcost
-          accept <- bernoulli prob
-          let (nepochs, nlocation, ncost) =
-                if   accept
-                then (pred n, proposal, pcost)
-                else (pred n, current, ccost)
+              accept = liftSelect $ bernoulli prob
+          (nepochs, nlocation, ncost) <- liftF . ProgramF . InR . InL $
+                ifS accept
+                    (pure (pred n, proposal, pcost))
+                    (pure (pred n, current, ccost))
           return (Just (nlocation, MHP nepochs nlocation ncost))
 
 moveProbability :: Double -> Double -> Double

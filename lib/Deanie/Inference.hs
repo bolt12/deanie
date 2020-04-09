@@ -19,11 +19,13 @@ import Deanie.Inference.Rejection as Export
 
 data Average a = Average !a !a
 
-instance Fractional a => Monoid (Average a) where
-  mempty = Average 0 0
-  mappend (Average nL xL) (Average nR xR) = Average n x where
+instance Fractional a => Semigroup (Average a) where
+  (<>) (Average nL xL) (Average nR xR) = Average n x where
     n = nL + nR
     x = (xL * nL + xR * nR) / (nL + nR)
+
+instance Fractional a => Monoid (Average a) where
+  mempty = Average 0 0
 
 average :: Fractional a => L.Fold a a
 average = L.Fold tally mempty summarize where
